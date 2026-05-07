@@ -12,7 +12,7 @@ Freeze scope, interfaces, and operational expectations before coding.
 
 ### Tasks
 1. Confirm backlog source scope:
-- Project keys, board IDs, JQL filters
+- Project keys, and JQL filters
 - Ticket volume expectations per run
 2. Confirm output contract:
 - Custom score field ID/name in JIRA
@@ -24,17 +24,13 @@ Freeze scope, interfaces, and operational expectations before coding.
 - Secret source (vault/env)
 - Least-privileged API credentials
 
-### Test Checklist
-- Stakeholder sign-off on [UNDERSTANDING.md](UNDERSTANDING.md)
-- Field mapping doc reviewed by product + engineering
-- Security approval for secret management path
+
 
 ### Exit Criteria
 - All assumptions from [UNDERSTANDING.md](UNDERSTANDING.md) Section 11 are validated.
 - Data contract approved.
 
 ### Deliverables
-- Signed-off scope notes
 - Data contract document
 - Environment/secrets checklist
 
@@ -83,12 +79,6 @@ Implement and verify ticket fetch pipeline from JIRA MCP.
 3. Normalize ticket payload into internal schema.
 4. Add pagination and basic rate-limit handling.
 
-### Test Checklist
-- Integration test against non-prod JIRA project.
-- Verify required fields are present:
-  - id, summary, description, labels, story points, priority, assignee, sprint, components, dependencies
-- Pagination tested with >1 page dataset.
-- Failure behavior tested (network/auth errors).
 
 ### Exit Criteria
 - Fetch service returns stable normalized schema for target scope.
@@ -111,10 +101,6 @@ Load prompt templates/rules/examples and generate per-ticket model input.
 3. Build prompt composition service with deterministic ordering.
 4. Add token budgeting strategy (truncate/summarize non-critical fields).
 
-### Test Checklist
-- Unit tests for loader behavior and missing-file handling.
-- Prompt generation snapshot tests for representative tickets.
-- Token size checks for small/medium/large ticket descriptions.
 
 ### Exit Criteria
 - Prompt generation deterministic and version-traceable.
@@ -137,11 +123,6 @@ Implement model invocation layer with provider abstraction.
 3. Add timeout, retry, and backoff policy per call.
 4. Capture request/response metadata for audit (without secrets).
 
-### Test Checklist
-- Provider mock tests for success/failure/retry cases.
-- Live smoke call in non-prod environment.
-- Timeout behavior validated.
-- Rate-limit behavior validated.
 
 ### Exit Criteria
 - Gateway reliably returns raw model response and metadata.
@@ -165,13 +146,6 @@ Make LLM output safe, strict, and update-ready.
 3. Validate score and confidence ranges.
 4. Add fallback handling for invalid output (retry then fail-safe mark).
 
-### Test Checklist
-- Unit tests for malformed JSON, missing keys, wrong types.
-- Boundary tests:
-  - score at 0 and 100
-  - confidence at 0.0 and 1.0
-- Invalid output retry path tested.
-
 ### Exit Criteria
 - Only validated responses can move to update path.
 - Invalid responses are logged and safely quarantined.
@@ -191,12 +165,6 @@ Implement reliable and idempotent score update into JIRA.
 2. Add idempotency check (skip if same score already present).
 3. Add per-ticket status recording: updated/skipped/failed.
 4. Add retry policy for transient update failures.
-
-### Test Checklist
-- Integration test updates score in non-prod issue.
-- Verify no-op behavior when score unchanged.
-- Verify duplicate update prevention.
-- Verify transient failure retry and final status recording.
 
 ### Exit Criteria
 - Score writes are correct, traceable, and non-duplicative.
@@ -221,38 +189,15 @@ Wire full flow for ticket batch execution.
 - partial-failure continuation
 3. Add final run summary report.
 
-### Test Checklist
-- E2E run with mixed ticket quality and expected failures.
-- Verify counts:
-- total, success, failed, retried, skipped
-- Verify run continues despite individual ticket failures.
-
 ### Exit Criteria
 - One command executes complete run and returns deterministic summary.
 
 ### Deliverables
 - Orchestrator service
-- E2E test scenario pack
 - Run summary output format
 
 ---
 
-## Phase 8 - Scheduling and Operations
-### Goal
-Automate daily execution and operational visibility.
-
-### Tasks
-1. Implement scheduler mode:
-- Linux cron and/or APScheduler mode
-2. Add job lock to avoid overlapping runs.
-3. Add alerting hooks for failed runs.
-4. Add log rotation and retention policy.
-
-### Test Checklist
-- Dry-run scheduled execution test.
-- Overlap protection test (second run blocked if first active).
-- Alert triggers on synthetic failure.
-- Log retention policy verified.
 
 ### Exit Criteria
 - Stable unattended daily execution in non-prod.
@@ -274,12 +219,6 @@ Meet enterprise readiness standards.
 3. Add metrics dashboard and SLO signals.
 4. Add immutable audit trail for scoring decisions.
 
-### Test Checklist
-- Secret scan passes.
-- Log schema validated in centralized log pipeline.
-- Metrics emitted for each major stage.
-- Audit records reproducible from stored metadata.
-
 ### Exit Criteria
 - Security and observability controls pass enterprise review.
 
@@ -289,25 +228,6 @@ Meet enterprise readiness standards.
 - Audit trail design note
 
 ---
-
-## Phase 10 - Deployment and Release
-### Goal
-Package and release for enterprise operations.
-
-### Tasks
-1. Containerize app (Dockerfile + runtime config).
-2. Prepare deployment variants:
-- Linux cron host
-- Jenkins scheduled pipeline
-- Kubernetes CronJob
-3. Add environment-specific config templates.
-4. Execute staged rollout: dev -> qa -> prod.
-
-### Test Checklist
-- Container image build and run smoke test.
-- Jenkins schedule test.
-- Kubernetes CronJob test with secret injection.
-- Rollback drill validated.
 
 ### Exit Criteria
 - Production deployment approved with rollback plan and monitoring active.
@@ -319,12 +239,6 @@ Package and release for enterprise operations.
 
 ---
 
-## Continuous Test Strategy (Across All Phases)
-1. Unit tests for all pure logic modules.
-2. Integration tests for Jira MCP + LLM gateway adapters.
-3. Contract tests for request/response schemas.
-4. E2E tests for daily batch workflow.
-5. Resilience tests for timeout, rate-limit, and partial outage scenarios.
 
 ## Suggested Milestone Gate Reviews
 1. Gate A (after Phase 2): Jira read-path readiness
@@ -333,23 +247,5 @@ Package and release for enterprise operations.
 4. Gate D (after Phase 9): Enterprise hardening readiness
 5. Gate E (after Phase 10): Production go-live approval
 
-## Progress Tracking Template
-Use this at the end of each sprint/day:
-
-- Planned phase:
-- Completed tasks:
-- Tests executed:
-- Passed:
-- Failed:
-- Risks/Blockers:
-- Decision needed:
-- Next phase start date:
-
-## Recommended First Sprint (Practical Start)
-1. Complete Phase 0 and Phase 1.
-2. Implement Phase 2 read path for a single project filter.
-3. Add 3 integration tests:
-- successful fetch
-- auth failure
-- pagination behavior
-4. Demo output as normalized ticket JSON and run summary.
+Note: 
+- Do focus on unit test
