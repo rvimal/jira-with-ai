@@ -1,0 +1,38 @@
+{
+  "llm": {
+    "url": "https://your-llm-endpoint/v1",
+    "model": "gpt-oss-20b",
+    "token": "",
+    "caFile": "",
+    "certFile": "",
+    "keyFile": "",
+    "insecureSkipTlsVerify": false,
+    "temperature": 0.1
+  },
+  "mcp": {
+    "command": "node",
+    "args": [
+      "./mcp-jira-server.js"
+    ],
+    "tools": {
+      "fetchTickets": "jira_search_issues",
+      "updateTicket": "jira_update_issue"
+    }
+  },
+  "jira": {
+    "project": "ABC",
+    "query": "project = ABC AND statusCategory != Done",
+    "scoreField": "customfield_12345",
+    "lockField": "manualLock",
+    "statusField": "status",
+    "closedStatuses": [
+      "Done",
+      "Closed",
+      "Resolved"
+    ],
+    "fetchLimit": 50
+  },
+  "actionsDir": "./actions",
+  "auditLogFile": "./logs/audit.jsonl",
+  "scheduleIntervalMs": 300000
+}

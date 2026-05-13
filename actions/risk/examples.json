@@ -1,0 +1,15 @@
+[
+  {
+    "input": {
+      "ticket": "ABC-101",
+      "summary": "Payment API retries failing",
+      "priority": "High",
+      "dependencies": 3
+    },
+    "output": {
+      "ticket": "ABC-101",
+      "newValue": 82,
+      "reason": "High priority with multiple dependencies and runtime failures"
+    }
+  }
+]
