@@ -2,6 +2,28 @@ import fs from "node:fs";
 import https from "node:https";
 import axios from "axios";
 
+function normalizeBaseUrl(url) {
+  const trimmedUrl = String(url || "").trim().replace(/\/+$/, "");
+
+  if (!trimmedUrl) {
+    return trimmedUrl;
+  }
+
+  if (trimmedUrl.endsWith("/chat/completions")) {
+    return trimmedUrl.slice(0, -"/chat/completions".length);
+  }
+
+  if (trimmedUrl.endsWith("/v1/chat/completions")) {
+    return trimmedUrl.slice(0, -"/chat/completions".length);
+  }
+
+  if (trimmedUrl.endsWith("/api/generate") || trimmedUrl.endsWith("/api/chat")) {
+    return `${trimmedUrl.replace(/\/api\/(generate|chat)$/, "")}/v1`;
+  }
+
+  return trimmedUrl;
+}
+
 function createHttpsAgent(llmConfig) {
   const options = {
     rejectUnauthorized: !llmConfig.insecureSkipTlsVerify
@@ -53,7 +75,7 @@ function extractJsonArray(text) {
 
 export function createLlmClient(config) {
   const llmConfig = config.llm;
-  const baseUrl = llmConfig.url.replace(/\/$/, "");
+  const baseUrl = normalizeBaseUrl(llmConfig.url);
 
   const http = axios.create({
     baseURL: baseUrl,

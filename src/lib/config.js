@@ -62,7 +62,8 @@ export function loadConfig() {
       }
     },
     actionsDir: process.env.ACTIONS_DIR,
-    auditLogFile: process.env.AUDIT_LOG_FILE
+    auditLogFile: process.env.AUDIT_LOG_FILE,
+    logLevel: process.env.AGENT_LOG_LEVEL || process.env.LOG_LEVEL
   };
 
   config = deepMerge(config, envOverride);

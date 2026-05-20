@@ -1,5 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { logDebug } from "./logger.js";
 
 function normalizeToolResult(result) {
   if (!result) {
@@ -33,8 +34,11 @@ export function createMcpClient(config) {
   return {
     async connect() {
       if (client) {
+        logDebug("MCP connect skipped: client already connected");
         return;
       }
+
+      logDebug(`Starting MCP transport command=${config.mcp.command} args=${JSON.stringify(config.mcp.args || [])}`);
 
       transport = new StdioClientTransport({
         command: config.mcp.command,
@@ -52,6 +56,7 @@ export function createMcpClient(config) {
       );
 
       await client.connect(transport);
+      logDebug("MCP connection established");
     },
 
     async listTools() {
@@ -59,6 +64,7 @@ export function createMcpClient(config) {
         throw new Error("MCP client is not connected");
       }
       const result = await client.listTools();
+      logDebug(`MCP listTools returned ${(result.tools || []).length} tools`);
       return (result.tools || []).map((tool) => ({
         name: tool.name,
         description: tool.description || ""
@@ -69,11 +75,14 @@ export function createMcpClient(config) {
       if (!client) {
         throw new Error("MCP client is not connected");
       }
+      logDebug(`MCP callTool name=${name} argKeys=${Object.keys(args || {}).join(",") || "<none>"}`);
 
       const result = await client.callTool({
         name,
         arguments: args || {}
       });
+
+      logDebug(`MCP callTool completed name=${name}`);
 
       return normalizeToolResult(result);
     },
@@ -84,6 +93,7 @@ export function createMcpClient(config) {
       }
       client = null;
       transport = null;
+      logDebug("MCP client closed");
     }
   };
 }

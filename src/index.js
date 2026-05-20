@@ -4,7 +4,7 @@ import { loadConfig } from "./lib/config.js";
 import { createLlmClient } from "./lib/llmClient.js";
 import { createMcpClient } from "./lib/mcpClient.js";
 import { runAction, rollbackLastRun } from "./lib/runner.js";
-import { logInfo, logError } from "./lib/logger.js";
+import { logInfo, logError, logDebug, setLogLevel } from "./lib/logger.js";
 
 function parseArgs(argv) {
   const args = [...argv];
@@ -76,6 +76,8 @@ async function runScheduled(task, intervalMs) {
 async function main() {
   const { command, options } = parseArgs(process.argv.slice(2));
   const config = loadConfig();
+  setLogLevel(config.logLevel);
+  logDebug(`CLI command=${command || "<none>"} options=${JSON.stringify(options)}`);
 
   if (!command || command === "--help" || command === "-h" || options.help) {
     printUsage();

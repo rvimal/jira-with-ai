@@ -1,7 +1,7 @@
 {
   "llm": {
-    "url": "https://your-llm-endpoint/v1",
-    "model": "gpt-oss-20b",
+    "url": "http://localhost:11434/v1",
+    "model": "qwen3:0.6b",
     "token": "",
     "caFile": "",
     "certFile": "",
@@ -12,11 +12,11 @@
   "mcp": {
     "command": "node",
     "args": [
-      "./mcp-jira-server.js"
+      "D:\\workspace\\jira-mcp\\src\\mcp.js"
     ],
     "tools": {
-      "fetchTickets": "jira_search_issues",
-      "updateTicket": "jira_update_issue"
+      "fetchTickets": "search_ticket",
+      "updateTicket": "updated_jira"
     }
   },
   "jira": {
@@ -34,5 +34,6 @@
   },
   "actionsDir": "./actions",
   "auditLogFile": "./logs/audit.jsonl",
+  "logLevel": "info",
   "scheduleIntervalMs": 300000
 }

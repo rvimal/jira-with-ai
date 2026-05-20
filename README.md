@@ -100,6 +100,41 @@ npm run agent -- test-llm
 npm run agent -- run --action risk --dry-run
 ```
 
+## Scheduler Setup (Windows)
+
+Use the batch script below to run health checks and then execute updates:
+
+```bat
+scripts\run-risk-execute.bat <action-name>
+```
+
+Example:
+
+```bat
+scripts\run-risk-execute.bat risk
+```
+
+The script runs, in order:
+
+1. `npm run agent -- test-llm`
+2. `npm run agent -- test-mcp`
+3. `npm run agent -- run --action <action-name> --execute`
+
+Create a scheduled task:
+
+1. Open Task Scheduler.
+2. Create Task.
+3. In **General**, choose an account that has access to Node.js and this repo.
+4. In **Triggers**, set your desired schedule.
+5. In **Actions**, set:
+    - Program/script: `cmd.exe`
+    - Add arguments: `/c "D:\workspace\jira-with-ai\scripts\run-risk-execute.bat risk"`
+6. Save and run once manually to verify output.
+
+Optional: set `AGENT_LOG_LEVEL=debug` in the task environment if you want verbose logs.
+
+ $env:AGENT_LOG_LEVEL="debug";
+ $env:AGENT_LOG_LEVEL="debug"; npm run agent -- test-mcp
 ## Execution flow
 
 1. Connect to MCP
