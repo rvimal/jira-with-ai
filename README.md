@@ -65,6 +65,41 @@ actions/risk/
 npm install
 ```
 
+## Local UI
+
+Run the local dashboard (Angular 21 + Bootstrap):
+
+```bash
+npm run ui
+```
+
+Then open:
+
+```text
+http://localhost:3030
+```
+
+The UI can:
+
+1. Run `test-llm`
+2. Run `test-mcp`
+3. Create new actions with required files (`system.md`, `instructions.md`, `examples.json`)
+4. Edit action files in-browser and save changes
+5. Test actions in `--dry-run` mode or apply with `--execute`
+6. Show tail logs for `logs/scheduler-audit.log` and `logs/audit.jsonl`
+
+UI stack:
+
+1. Angular 21
+2. Bootstrap CSS (layout and components)
+3. Express (API and static hosting)
+
+For Angular dev server only:
+
+```bash
+npm run ui:dev
+```
+
 Optional env overrides are available in `.env.example`.
 
 ## Configuration
@@ -128,13 +163,11 @@ Create a scheduled task:
 4. In **Triggers**, set your desired schedule.
 5. In **Actions**, set:
     - Program/script: `cmd.exe`
-    - Add arguments: `/c "D:\workspace\jira-with-ai\scripts\run-risk-execute.bat risk"`
+    - Add arguments: `/c "D:\workspace\jira-with-ai\scripts\run-execute.bat risk"`
 6. Save and run once manually to verify output.
 
 Optional: set `AGENT_LOG_LEVEL=debug` in the task environment if you want verbose logs.
 
- $env:AGENT_LOG_LEVEL="debug";
- $env:AGENT_LOG_LEVEL="debug"; npm run agent -- test-mcp
 ## Execution flow
 
 1. Connect to MCP

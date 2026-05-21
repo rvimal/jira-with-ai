@@ -1,0 +1,215 @@
+<div class="app-backdrop">
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <main class="app-shell">
+    <aside class="sidebar-panel">
+      <div class="brand-block">
+        <p class="eyebrow">Jira With AI</p>
+        <h1 class="brand-title">Control Center</h1>
+        <p class="brand-subtitle">Operate tests, runs, and action authoring from one place.</p>
+      </div>
+
+      <nav class="menu-list" aria-label="Main menu">
+        <button class="menu-item" [class.active]="activeMenu === 'menu1'" (click)="setActiveMenu('menu1')">
+          <span class="menu-index">01</span>
+          <span>
+            <strong>LLM + MCP</strong>
+            <small>Testing and configuration</small>
+          </span>
+        </button>
+
+        <button class="menu-item" [class.active]="activeMenu === 'menu2'" (click)="setActiveMenu('menu2')">
+          <span class="menu-index">02</span>
+          <span>
+            <strong>Execution</strong>
+            <small>Run actions and inspect logs</small>
+          </span>
+        </button>
+
+        <button class="menu-item" [class.active]="activeMenu === 'menu3'" (click)="setActiveMenu('menu3')">
+          <span class="menu-index">03</span>
+          <span>
+            <strong>Action Studio</strong>
+            <small>Create, update, and test actions</small>
+          </span>
+        </button>
+      </nav>
+
+      <div class="status-card" [class.running]="statusType === 'running'" [class.success]="statusType === 'success'" [class.error]="statusType === 'error'">
+        <span>System Status</span>
+        <strong>{{ statusMessage }}</strong>
+      </div>
+    </aside>
+
+    <section class="content-panel">
+      @if (activeMenu === 'menu1') {
+        <header class="content-head">
+          <h2>LLM and MCP Testing</h2>
+          <p>Run connectivity checks and review active runtime configuration.</p>
+        </header>
+
+        <div class="grid two-col">
+          <article class="card-modern">
+            <h3>Health Checks</h3>
+            <div class="button-row">
+              <button class="btn btn-solid" (click)="runTest('test-llm')" [disabled]="busy">Test LLM</button>
+              <button class="btn btn-solid" (click)="runTest('test-mcp')" [disabled]="busy">Test MCP</button>
+            </div>
+          </article>
+
+          <article class="card-modern tall">
+            <!-- <div class="card-head">
+              <h3>Configuration</h3>
+              <button class="btn btn-subtle" (click)="loadConfig()" [disabled]="busy">Refresh</button>
+            </div>
+            <pre class="terminal config-box">{{ configView || 'No config loaded.' }}</pre> -->
+            <form class="config-edit-form" (ngSubmit)="saveConfig()" *ngIf="config">
+              <h4>Edit Configuration</h4>
+              <div class="field-stack">
+                <label class="form-label">LLM Model</label>
+                <input class="form-control modern-input" [(ngModel)]="config.llm.model" name="llmModel" />
+                <label class="form-label">LLM URL</label>
+                <input class="form-control modern-input" [(ngModel)]="config.llm.url" name="llmUrl" />
+              </div>
+              <div class="field-stack mt-gap">
+                <label class="form-label">MCP Command</label>
+                <input class="form-control modern-input" [(ngModel)]="config.mcp.command" name="mcpCommand" />
+                <label class="form-label">MCP Tools (JSON)</label>
+                <textarea class="form-control modern-input mono" rows="2" [(ngModel)]="mcpToolsJson" name="mcpTools"></textarea>
+              </div>
+              <div class="field-stack mt-gap">
+                <label class="form-label">Jira Project</label>
+                <input class="form-control modern-input" [(ngModel)]="config.jira.project" name="jiraProject" />
+                <label class="form-label">Jira Query</label>
+                <input class="form-control modern-input" [(ngModel)]="config.jira.query" name="jiraQuery" />
+                <label class="form-label">Jira Fetch Limit</label>
+                <input class="form-control modern-input" type="number" [(ngModel)]="config.jira.fetchLimit" name="jiraFetchLimit" />
+              </div>
+              <button class="btn btn-solid mt-3" type="submit" [disabled]="busy">Save Config</button>
+            </form>
+          </article>
+        </div>
+
+        <div class="grid one-col mt-gap">
+          <article class="card-modern">
+            <div class="tab-header">
+              <button class="tab-btn" [class.active]="menu1Tab === 'output'" (click)="menu1Tab = 'output'">Command Output</button>
+              <button class="tab-btn" [class.active]="menu1Tab === 'audit'" (click)="menu1Tab = 'audit'">Scheduler Audit</button>
+            </div>
+            <div class="tab-content">
+              <pre class="terminal" *ngIf="menu1Tab === 'output'">{{ commandOutput || 'No command output yet.' }}</pre>
+              <pre class="terminal" *ngIf="menu1Tab === 'audit'">{{ schedulerLog || 'No scheduler log entries yet.' }}</pre>
+            </div>
+          </article>
+        </div>
+      }
+
+      @if (activeMenu === 'menu2') {
+        <header class="content-head">
+          <h2>Execution Console</h2>
+          <p>Run dry-runs or execute updates and monitor resulting audit traces.</p>
+        </header>
+
+        <div class="grid two-col">
+          <article class="card-modern">
+            <h3>Run Action</h3>
+            <label class="form-label">Action</label>
+            <select class="form-select modern-input" [(ngModel)]="selectedAction" (ngModelChange)="loadActionFiles()">
+              @for (action of actions; track action) {
+                <option [value]="action">{{ action }}</option>
+              }
+            </select>
+            <div class="button-row mt-3">
+              <button class="btn btn-solid" (click)="runAction('dry-run')" [disabled]="busy || !selectedAction">Dry Run</button>
+              <button class="btn btn-danger" (click)="runAction('execute')" [disabled]="busy || !selectedAction">Execute</button>
+            </div>
+          </article>
+
+          <article class="card-modern">
+            <h3>Command Output</h3>
+            <pre class="terminal">{{ commandOutput || 'No command output yet.' }}</pre>
+          </article>
+        </div>
+
+        <div class="grid one-col mt-gap">
+          <article class="card-modern">
+            <div class="tab-header">
+              <button class="tab-btn" [class.active]="menu2Tab === 'output'" (click)="menu2Tab = 'output'">Command Output</button>
+              <button class="tab-btn" [class.active]="menu2Tab === 'audit'" (click)="menu2Tab = 'audit'">Scheduler Audit</button>
+              <button class="tab-btn" [class.active]="menu2Tab === 'exec'" (click)="menu2Tab = 'exec'">Execution Audit</button>
+            </div>
+            <div class="tab-content">
+              <pre class="terminal" *ngIf="menu2Tab === 'output'">{{ commandOutput || 'No command output yet.' }}</pre>
+              <pre class="terminal" *ngIf="menu2Tab === 'audit'">{{ schedulerLog || 'No scheduler log entries yet.' }}</pre>
+              <pre class="terminal" *ngIf="menu2Tab === 'exec'">{{ auditLog || 'No execution audit entries yet.' }}</pre>
+            </div>
+          </article>
+        </div>
+      }
+
+      @if (activeMenu === 'menu3') {
+        <header class="content-head">
+          <h2>Action Studio</h2>
+          <p>Create new action packs, edit files, and test them instantly.</p>
+        </header>
+
+        <div class="grid two-col">
+          <article class="card-modern">
+            <h3>Create New Action</h3>
+            <div class="field-stack">
+              <label class="form-label">Action Name</label>
+              <input class="form-control modern-input" [(ngModel)]="newActionName" placeholder="risk-review" />
+
+              <label class="form-label">System Prompt</label>
+              <textarea class="form-control modern-input mono" [(ngModel)]="newSystem" rows="4"></textarea>
+
+              <label class="form-label">Instructions</label>
+              <textarea class="form-control modern-input mono" [(ngModel)]="newInstructions" rows="4"></textarea>
+            </div>
+            <button class="btn btn-solid mt-3" (click)="createAction()" [disabled]="busy">Create Action</button>
+          </article>
+
+          <article class="card-modern">
+            <h3>Test Selected Action</h3>
+            <label class="form-label">Action</label>
+            <select class="form-select modern-input" [(ngModel)]="selectedAction" (ngModelChange)="loadActionFiles()">
+              @for (action of actions; track action) {
+                <option [value]="action">{{ action }}</option>
+              }
+            </select>
+            <div class="button-row mt-3">
+              <button class="btn btn-solid" (click)="runAction('dry-run')" [disabled]="busy || !selectedAction">Test Dry Run</button>
+              <button class="btn btn-danger" (click)="runAction('execute')" [disabled]="busy || !selectedAction">Test Execute</button>
+            </div>
+            <pre class="terminal mt-3">{{ commandOutput || 'No command output yet.' }}</pre>
+          </article>
+        </div>
+
+        <article class="card-modern mt-gap">
+          <div class="card-head">
+            <h3>Action File Editor</h3>
+            <span class="file-context">{{ selectedAction || 'No action selected' }}</span>
+          </div>
+
+          <ul class="file-tabs">
+            @for (fileName of fileOrder; track fileName) {
+              <li>
+                <button class="file-tab" [class.active]="selectedFile === fileName" (click)="selectFile(fileName)">
+                  {{ fileName }}
+                </button>
+              </li>
+            }
+          </ul>
+
+          <textarea class="form-control modern-input mono editor" rows="14" [(ngModel)]="fileDraft" [disabled]="!selectedAction"></textarea>
+
+          <div class="button-row mt-3">
+            <button class="btn btn-solid" (click)="saveFile()" [disabled]="busy || !selectedAction">Save File</button>
+            <button class="btn btn-subtle" (click)="loadActionFiles()" [disabled]="busy || !selectedAction">Reload</button>
+          </div>
+        </article>
+      }
+    </section>
+  </main>
+</div>
