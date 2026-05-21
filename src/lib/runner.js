@@ -113,15 +113,24 @@ async function confirmExecution(count) {
 
 async function applyUpdates(mcpClient, config, proposals) {
   const updates = [];
+  for (const proposal of proposals) {
     const result = await mcpClient.callTool(config.mcp.tools.updateTicket, {
-      key: 'JIR-1234',
+      key: proposal.ticket,
       fields: {
-        [config.jira.scoreField]: 10
+        [config.jira.scoreField]: proposal.newValue
       }
     });
-    updates.push({ ticket: '1234', result });
-
+    updates.push({ ticket: proposal.ticket, oldValue: proposal.oldValue, newValue: proposal.newValue, result });
+  }
   return updates;
+}
+
+function chunkArray(arr, size) {
+  const chunks = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
 }
 
 export async function runAction({ config, llmClient, mcpClient, action, mode }) {
@@ -139,25 +148,25 @@ export async function runAction({ config, llmClient, mcpClient, action, mode }) 
     limit: config.jira.fetchLimit
   });
   const tickets = normalizeTickets(ensureArray(fetched, "Fetch tickets tool"));
-  logDebug(`Fetched ${tickets} tickets`);
+  const totalTickets = tickets.length;
+  const batchSize = config.jira.batchSize || 5;
+  const batches = chunkArray(tickets, batchSize);
+  logInfo(`Fetched ${totalTickets} tickets total — processing in ${batches.length} batch(es) of up to ${batchSize}`);
 
-  const rawProposals = await llmClient.proposeChanges({
-    systemPrompt: actionDef.system,
-    instructions: actionDef.instructions,
-    examples: actionDef.examples,
-    tickets: tickets
-  });
-
-  // const validated = buildValidatedProposals(
-  //   ensureArray(rawProposals, "LLM output"),
-  //   tickets,
-  //   config
-  // );
-  // logDebug(`Validated proposals accepted=${validated.accepted.length} rejected=${validated.rejected.length}`);
-
-  // if (validated.rejected.length > 0) {
-  //   logWarn(`Rejected ${validated.rejected.length} proposals due to guardrails`);
-  // }
+  const allProposals = [];
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    logInfo(`Running LLM for batch ${i + 1}/${batches.length} (${batch.length} tickets)`);
+    const rawProposals = await llmClient.proposeChanges({
+      systemPrompt: actionDef.system,
+      instructions: actionDef.instructions,
+      examples: actionDef.examples,
+      tickets: batch
+    });
+    const proposals = ensureArray(rawProposals, `LLM output batch ${i + 1}`);
+    logDebug(`Batch ${i + 1} produced ${proposals.length} proposal(s)`);
+    allProposals.push(...proposals);
+  }
 
   const baseResult = {
     action,
@@ -166,7 +175,9 @@ export async function runAction({ config, llmClient, mcpClient, action, mode }) 
     startedAt,
     toolCount: tools.length,
     toolNames: tools.map((t) => t.name),
-    fetchedTickets: tickets.length
+    fetchedTickets: totalTickets,
+    batchCount: batches.length,
+    batchSize
   };
 
   if (mode === "dry-run") {
@@ -180,7 +191,7 @@ export async function runAction({ config, llmClient, mcpClient, action, mode }) 
   }
 
   if (mode === "approve") {
-    const ok = await confirmExecution(2);
+    const ok = await confirmExecution(allProposals.length);
     if (!ok) {
       await mcpClient.close();
       logDebug("runAction cancelled by user during approve mode");
@@ -192,7 +203,7 @@ export async function runAction({ config, llmClient, mcpClient, action, mode }) 
     }
   }
 
-  const applyResults = await applyUpdates(mcpClient, config, true);
+  const applyResults = await applyUpdates(mcpClient, config, allProposals);
   const finishedAt = new Date().toISOString();
   logDebug(`Applied ${applyResults.length} updates`);
 

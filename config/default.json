@@ -30,7 +30,8 @@
       "Closed",
       "Resolved"
     ],
-    "fetchLimit": 50
+    "fetchLimit": 50,
+    "batchSize": 5
   },
   "actionsDir": "./actions",
   "auditLogFile": "./logs/audit.jsonl",
